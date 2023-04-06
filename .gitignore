@@ -1,0 +1,6 @@
+/.idea/
+*.properties
+target/
+*.iml
+logs/
+/.git-old/
