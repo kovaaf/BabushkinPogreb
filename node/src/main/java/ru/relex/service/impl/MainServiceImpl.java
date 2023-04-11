@@ -12,6 +12,7 @@ import ru.relex.entity.AppPhoto;
 import ru.relex.entity.AppUser;
 import ru.relex.entity.RawData;
 import ru.relex.exceptions.UploadFileException;
+import ru.relex.service.AppUserService;
 import ru.relex.service.FileService;
 import ru.relex.service.MainService;
 import ru.relex.service.ProducerService;
@@ -29,13 +30,15 @@ public class MainServiceImpl implements MainService {
 	private final ProducerService producerService;
 	private final AppUserDao appUserDao;
 	private final FileService fileService;
+	private final AppUserService appUserService;
 
 	public MainServiceImpl(RawDataDAO rawDataDAO, ProducerService producerService, AppUserDao appUserDao,
-	                       FileService fileService) {
+	                       FileService fileService, AppUserService appUserService) {
 		this.rawDataDAO = rawDataDAO;
 		this.producerService = producerService;
 		this.appUserDao = appUserDao;
 		this.fileService = fileService;
+		this.appUserService = appUserService;
 	}
 
 	@Override
@@ -52,7 +55,7 @@ public class MainServiceImpl implements MainService {
 		} else if (BASIC_STATE.equals(userState)) {
 			output = processServiceCommand(appUser, text);
 		} else if (WAIT_FOR_EMAIL_STATE.equals(userState)) {
-			// TODO Добавить обработку емейла
+			output = appUserService.setEmail(appUser, text);
 		} else {
 			log.error("Unknown user state: " + userState);
 			output = "Неизвестная ошибка! Введите /cancel и попробуйте снова!";
@@ -74,7 +77,7 @@ public class MainServiceImpl implements MainService {
 		try {
 			AppDocument doc = fileService.processDoc(update.getMessage());
 			String link = fileService.generateLink(doc.getId(), LinkType.GET_DOC);
-			var answer = "Документ успешно загружен! Ссылка для скачивания: " + link;
+			var answer = "Документ успешно загружен! Ссылка для скачивания:\n" + link;
 			sendAnswer(answer, chatId);
 		} catch (UploadFileException e) {
 			log.error(e);
@@ -95,7 +98,7 @@ public class MainServiceImpl implements MainService {
 		try {
 			AppPhoto photo = fileService.processPhoto(update.getMessage());
 			String link = fileService.generateLink(photo.getId(), LinkType.GET_PHOTO);
-			var answer = "Фото успешно загружено! Ссылка для скачивания: " + link;
+			var answer = "Фото успешно загружено! Ссылка для скачивания:\n" + link;
 			sendAnswer(answer, chatId);
 		} catch (UploadFileException e) {
 			log.error(e);
@@ -130,8 +133,7 @@ public class MainServiceImpl implements MainService {
 	private String processServiceCommand(AppUser appUser, String text) {
 		var serviceCommand = ServiceCommand.fromValue(text);
 		if (REGISTRATION.equals(serviceCommand)) {
-			// TODO добавить регистрацию
-			return "Временно недоступно";
+			return appUserService.registerUser(appUser);
 		} else if (HELP.equals(serviceCommand)) {
 			return help();
 		} else if (START.equals(serviceCommand)) {
@@ -157,20 +159,19 @@ public class MainServiceImpl implements MainService {
 		User telegramUser = update.getMessage().getFrom();
 		// persistent - представлен в БД, имеет заполненный первичный ключ и связан с сессией hibernate,
 		// которую под копотом у себя использует SpringData
-		AppUser persistentAppUser = appUserDao.findAppUserByTelegramUserId(telegramUser.getId());
-		if (persistentAppUser == null) {
+		var optionalAppUser = appUserDao.findByTelegramUserId(telegramUser.getId());
+		if (optionalAppUser.isEmpty()) {
 			AppUser transientAppUser = AppUser.builder()
 					.telegramUserId(telegramUser.getId())
 					.username(telegramUser.getUserName())
 					.firstName(telegramUser.getFirstName())
 					.lastName(telegramUser.getLastName())
-                  // TODO изменить значение по умолчанию после добавления регистрации
-					.isActive(true)
+					.isActive(false)
 					.userState(BASIC_STATE).build();
 			return appUserDao.save(transientAppUser);
 			// save() озвращает тот же объект, но с первичным ключом и привязкой к сессии hibernate
 		}
-		return persistentAppUser;
+		return optionalAppUser.get();
 	}
 
 	private void saveRawData(Update update) {
