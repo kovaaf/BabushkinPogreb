@@ -11,13 +11,13 @@ import static ru.relex.model.RabbitQueue.*;
 
 @Component
 @Log4j
-public class UpdateController {
+public class UpdateProcessor {
 	private final MessageUtils messageUtils;
 	private final UpdateProducer updateProducer;
 	private TelegramBot telegramBot;
 
 
-	public UpdateController(MessageUtils messageUtils, UpdateProducer updateProducer) {
+	public UpdateProcessor(MessageUtils messageUtils, UpdateProducer updateProducer) {
 		this.messageUtils = messageUtils;
 		this.updateProducer = updateProducer;
 	}
