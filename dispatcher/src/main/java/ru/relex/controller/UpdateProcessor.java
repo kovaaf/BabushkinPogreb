@@ -54,7 +54,7 @@ public class UpdateProcessor {
 	}
 
 	private void setUnsupportedMessageTypeView(Update update) {
-		// Т.к. будем также передавать в UpdateController ответы из сервисов,
+		// Т.к. будем также передавать в UpdateProcessor ответы из сервисов,
 		// а из сервисов мы не можем вызывать методы на телеграм боте (setAnswer), то нам нужен прокси-метод,
 		// который будет пробрасывать ответ в телеграм бот
 		var sendMessage = messageUtils.generateSendMessageWithText(update, "Неподдерживаемый тип сообщения");
