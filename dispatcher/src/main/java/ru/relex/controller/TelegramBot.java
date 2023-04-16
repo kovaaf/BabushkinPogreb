@@ -12,7 +12,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import javax.annotation.PostConstruct;
 
-// TODO перейти на webhook, нужен белый IP
 @Component
 @Log4j
 public class TelegramBot extends TelegramWebhookBot {
@@ -59,13 +58,13 @@ public class TelegramBot extends TelegramWebhookBot {
 
 	// Метод для отправки View
 	public void sendAnswerMessage(SendMessage message) {
-//		if (message != null) {
-//			try {
-//				execute(message);
-//			} catch (TelegramApiException e) {
-//				log.error(e);
-//			}
-//		}
+		if (message != null) {
+			try {
+				execute(message);
+			} catch (TelegramApiException e) {
+				log.error(e);
+			}
+		}
 	}
 
 	// Он нам не нужен
